@@ -81,16 +81,16 @@ _start:
     # ------- EXIST -------
 
 .clear_first_flag_HW1:
-    andq    $0x2,   %rsi
+    andq    $2,   %rsi
     jmp .clear_first_flag_ret_HW1
 
 
 .clear_second_flag_HW1:
-    andq    $0x1,   %rsi
+    andq    $1,   %rsi
     jmp .clear_second_flag_ret_HW1
 
 .end_HW1:
-    movq    $0x1,   %rax
-    cmpq    $0x3,   %rsi
+    movq    $1,   %rax
+    cmpq    $3,   %rsi
     cmove   %rax,   %rsi
     movb    %sil,   Result(%rip)

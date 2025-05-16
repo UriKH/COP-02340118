@@ -2,19 +2,30 @@
 
 .section .text
 _start:
-    lea Lower(%rip), %rsi      # rsi points to the start of the string
+    lea Lower(%rip), %rsi
+    lea Upper(%rip), %rdi
 
-.loop:
-    movzbl (%rsi), %eax        # load byte at [rsi] into eax, zero-extended
-    test   %al, %al            # check for null terminator
-    je     .done               # if null (end of string), jump out
+.loop_HW1:
+    movzbl (%rsi), %eax
+    test   %al, %al             # check for null terminator
+    je     .done
 
-    # --- do something with the character in %al ---
-    # e.g., print, count, compare, etc.
-    
+    cmpb    $122,   %al         # check if above 'z'
+    jg      .insert_HW1
+    cmpb    $97,    %al         # check if below 'a'
+    jl      .insert_HW1
 
-    inc    %rsi                # move to next character
-    jmp    .loop
+    # new char = orginal - 'a' + 'A'
+    subb    $97,    %al
+    addb    $65,    %al    
+    jmp     .insert_HW1
 
-.done:
+.insert_HW1:
+    # advnace to next char and insert to Upper
+    inc     %rsi
+    int     %rdi
+    movb    %al, (%rdi)
+    jmp     .loop_HW1
+
+.done_HW1:
     nop
