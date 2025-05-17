@@ -8,7 +8,7 @@ _start:
 .loop_HW1:
     movzbl (%rsi), %eax
     test   %al, %al             # check for null terminator
-    je     .done
+    je     .done_HW1
 
     cmpb    $122,   %al         # check if above 'z'
     jg      .insert_HW1
@@ -17,14 +17,13 @@ _start:
 
     # new char = orginal - 'a' + 'A'
     subb    $97,    %al
-    addb    $65,    %al    
-    jmp     .insert_HW1
+    addb    $65,    %al
 
 .insert_HW1:
     # advnace to next char and insert to Upper
-    inc     %rsi
-    int     %rdi
     movb    %al, (%rdi)
+    inc     %rdi
+    inc     %rsi
     jmp     .loop_HW1
 
 .done_HW1:
