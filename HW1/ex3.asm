@@ -27,24 +27,22 @@ _start:
     
     # ------- LOAD 2 VALUES -------
     # first value
-    movzbl  8(%rdi), %r8d
+    movslq  8(%rdi), %r8
     movq    (%rdi), %rdi    # ptr to second value
     testq   %rdi,   %rdi
     je      .end_HW1
     
     # second value
-    movzbl  8(%rdi), %r9d
+    movslq   8(%rdi), %r9
     movq    (%rdi), %rdi
     testq   %rdi,   %rdi
     je      .end_HW1
 
 .loop_HW1:
     # update if on last run
-    # testq   %rdi,   %rdi
-    # cmove   %rcx,   %r15
-    
+
     # load 3rd value
-    movzbl  8(%rdi), %r10d
+    movslq   8(%rdi), %r10
 
     # ------- compute 1st diff -------
     # r11 = r9 - r8
