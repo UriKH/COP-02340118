@@ -3,24 +3,30 @@
 .section .text
 _start:
 
-	movl $0, %eax 				#i=0, j=Length-1
-	movl (Length), %ebx
-	decl %ebx
+	movq Address(%rip), %rax
+	movq Address(%rip), %rbx
+	xorq %rcx, %rcx
+	movl Length(%rip), %ecx
+	decq %rcx
+	addq %rcx, %rbx
 	
 loop:
-	cmpl %ebx, %eax
+	cmpq %rbx, %rax
 	jge .L2 					#if i>=j return true
-	movb Address(,%eax,1), %cl
-	movb Address(,%ebx,1), %dl
+	movb (%rax), %cl
+	movb (%rbx), %dl
 	cmpb %cl, %dl
 	jne .L1 					#if arr[i] != arr[j] return false
-	incl %eax #i++
-	decl %ebx #j--
+	incq %rax #i++
+	decq %rbx #j--
 	jmp loop					#while (i<j)
 	
 .L1:
 	movb $0, (Result)
+	jmp end_HW1
 	
 .L2:
 	movb $1, (Result)
+	
+end_HW1:
 	
