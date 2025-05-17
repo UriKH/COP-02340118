@@ -3,18 +3,18 @@ First:  .quad node1
 node1:  .quad node2
         .int 1
 node2:  .quad node3
+        .int 2
+node3:  .quad 0
         .int 3
-node3:  .quad node4
-        .int 7
 node4:  .quad 0
-        .int 13
+        .int 8
 
 Result:
     .byte 0
 
 .section .text
     movzbl  Result(%rip), %eax
-    cmp     $2,     %al
+    cmp     $1,     %al
     je      success      
 
 error:
