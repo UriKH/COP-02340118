@@ -10,22 +10,22 @@ _start:
 	decq %rcx
 	addq %rcx, %rbx
 	
-loop:
+loop_HW1:
 	cmpq %rbx, %rax
-	jge .L2 					#if i>=j return true
+	jge .L2_HW1 					#if i>=j return true
 	movb (%rax), %cl
 	movb (%rbx), %dl
 	cmpb %cl, %dl
-	jne .L1 					#if arr[i] != arr[j] return false
+	jne .L1_HW1					#if arr[i] != arr[j] return false
 	incq %rax #i++
 	decq %rbx #j--
-	jmp loop					#while (i<j)
+	jmp loop_HW1					#while (i<j)
 	
-.L1:
+.L1_HW1:
 	movb $0, (Result)
 	jmp end_HW1
 	
-.L2:
+.L2_HW1:
 	movb $1, (Result)
 	
 end_HW1:
