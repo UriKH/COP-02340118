@@ -15,42 +15,50 @@ _start:
     xor     %r9,    %r9             
     xor     %r10,   %r10
     xor     %r13,   %r13    # curr second diff
-    movq    $-1,    %r14    # prev second diff      
+    movq    $-1,    %r14    # prev second diff
+
+    movq    $1,     %rcx
+    xor     %r15,   %r15    # is last value    
 
     # ------- CHECK VALID LIST -------
+    # check if first is nullptr
     testq   %rdi,   %rdi
     je      .end_HW1
     
     # ------- LOAD 2 VALUES -------
     # first value
-    movl    8(%rdi), %r8d
-    lea     (%rdi), %rdi
+    movzbl  8(%rdi), %r8d
+    movq    (%rdi), %rdi    # ptr to second value
     testq   %rdi,   %rdi
     je      .end_HW1
     
     # second value
-    movl    8(%rdi), %r9d
+    movzbl  8(%rdi), %r9d
     movq    (%rdi), %rdi
     testq   %rdi,   %rdi
     je      .end_HW1
 
-    # ------- compute previous 1st diff -------
-    movq    %r9,    %r15
-    subq    %r15,   %r8
-    movq    %r15,   %r11
-
 .loop_HW1:
+    # update if on last run
+    # testq   %rdi,   %rdi
+    # cmove   %rcx,   %r15
+    
     # load 3rd value
-    movl   8(%rdi), %r10d
+    movzbl  8(%rdi), %r10d
+
+    # ------- compute 1st diff -------
+    # r11 = r9 - r8
+    movq    %r9,    %r11
+    subq    %r8,    %r11
+
+    # r12 = r10 - r9
+    movq    %r10,   %r12
+    subq    %r9,    %r12
 
     # ------- compute current diff -------
-    # current 1st diff
-    movq    %r10,   %r15
-    subq    %r15,   %r9
-    movq    %r15,   %r12
     # current 2nd diff
     movq    %r12,   %r13
-    subq    %r13,   %r11
+    subq    %r11,   %r13
 
     # for first iteration:  prev 2nd diff := curr 2nd diff
     cmpq    $-1,    %r14
@@ -69,15 +77,18 @@ _start:
     # ------- advance in the list -------
     movq    %r9,    %r8
     movq    %r10,   %r9
-    movq    (%rdi), %rdi
-    testq   %rdi,   %rdi
-    je      .end_HW1
-    movq    (%rdi), %r10
+    
+    # cmpq    %rcx,   %r15
+    # je      .end_HW1
 
+    movq    (%rdi), %rdi
+    
     # check if reached end of list. if so finish.
     testq   %rdi,   %rdi
     jne     .loop_HW1
+    
     jmp .end_HW1
+    # jmp .loop_HW1
     # ------- EXIST -------
 
 .clear_first_flag_HW1:
