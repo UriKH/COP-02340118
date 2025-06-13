@@ -169,6 +169,7 @@ find_newline_f2:
 	jmp 	parse_line_f2
 
 	update_line_cnt_no_newline_EOF_f2:
+	inc		%rax
 	movq 	%r13,	%r14
 	subq	%r12,	%r14
 	inc 	%r14
