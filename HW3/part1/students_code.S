@@ -2,7 +2,216 @@
 
 .section .text
 compute_char_repeats:
+	# arguments (rdi - buffer, rsi - size, rdx - char)
+	xor 	%rcx, 	%rcx 	# indexer
+	xor 	%rax, 	%rax	# repeats
+	xor		%r10,	%r10	# current char
+	
+count_chars_f1:
+	# loop condition 
+	cmp 	%rcx,  	%rsi
+	je 		exit_f1
+	
+	# load char and increment indexer
+	movb	(%rdi, %rcx), %r10b
+	inc 	%rcx
+
+	# check char
+	cmp 	%r10, 	%rdx
+	jne 	count_chars_f1
+	inc 	%rax
+	jmp count_chars_f1
+
+exit_f1:
 	ret
 
 parse_lines:
+	# arguments (rdi - path, rsi - line_max_length, rdx - line_max_repeat)
+	# allocate stack
+	push	%rbp
+	movq	%rsp,	%rbp
+	subq	$128,	%rsp
+	push 	%r12	# start index
+	push	%r13	# end index
+	
+	# utility
+	push	%r14
+	push	%rbx 			# the special character
+
+	xor 	%r8,	%r8		# local line_length
+	xor 	%r11, 	%r11 	# local line_repeat
+	xor 	%rax, 	%rax	# line counter
+	xor		%r10,	%r10	# <<<<<< unused!
+	xor 	%r9,	%r9		# file descriptor
+
+	# call get_the_special_char
+	push	%rax
+	push 	%rdi
+	push 	%rsi
+	push 	%rdx
+	push 	%rcx
+	push 	%r8
+	push 	%r9
+	push 	%r10
+	push 	%r11
+
+	call get_the_special_char
+	movq	%rax,	%rbx
+
+	pop 	%r11
+	pop 	%r10
+	pop 	%r9
+	pop 	%r8
+	pop 	%rcx
+	pop 	%rdx
+	pop 	%rsi
+	pop 	%rdi
+	pop 	%rax
+
+	# syscall open
+	push 	%rax
+	push	%rdi
+	push	%rsi
+	push	%rdx
+	movq	$2, 	%rax
+	movq	$0,		%rdx
+	movq	$0,		%rsi
+	syscall
+
+	movq	%rax,	%r9
+	pop		%rdx
+	pop		%rsi
+	pop		%rdi
+	pop		%rax
+
+	# could not open -> exit
+	cmp 	%r9,	$0
+	je 		exit
+	
+	# ----------------- Read the file by 128 size chunks and parse -----------------
+read_file_loop_f2:
+	# read to buf (syscall read)
+	movq	$0, 	%rax
+	movq 	%r9,	%rdi
+	lea		$-128(%rbp), %rsi
+	movq	$128,	%rdx
+	syscall 
+
+	# check for EOF and clear stack
+	movq 	%rax,	%rcx
+	pop 	%rdx
+	pop 	%rsi
+	pop		%rdi
+	pop		%rax
+
+	cmp		%rcx,	$0
+	je 		EOF_f2
+
+	# ----------------- go over the chunk buffer and parse -----------------	
+	# set r12 (i.e. start) and r13 (i.e. end) to start of buffer 
+	lea 	$-128(%rbp), %r12
+	movq	%r12,	%r13
+
+	# use rcx as loop indexer
+	xor 	%rcx,	%rcx
+
+	# find the end of line in current buffer
+find_newline_f2:
+	# check if reached end of line
+	movq 	%rbp, 	%r14
+	subq	%r13,	%r14
+	cmp 	%r14, 	$0
+	je		update_line_cnt_no_newline_f2
+
+	# check if reached new line, if yes parse, else continue the search
+	cmp 	(%r13),	$10
+	je 		update_line_cnt_after_newline_f2
+
+	inc		%r13
+	jmp find_newline_f2
+
+	update_line_cnt_after_newline_f2:
+	inc		%rax						# new line found
+
+	lea 	(%r13, %r12, $-1), %r14		# update current line length
+	addq	%r14,	%r8
+
+	jmp 	parse_line_f2
+
+	update_line_cnt_no_newline_f2:
+	lea 	$1(%r13, %r12, $-1), %r14	# update current line length
+	addq	%r14,	%r8
+
+	jmp 	parse_line_f2
+
+parse_line_f2:
+	# compute char repeats
+	push	%rax
+	push 	%rdi
+	push 	%rsi
+	push 	%rdx
+	push 	%rcx
+	push 	%r8
+	push 	%r9
+	push 	%r10
+	push 	%r11
+
+	movq 	%r12, 	%rdi	
+	lea		$1(%r13, %r12, $-1), %rsi
+	movq	%rbx,	%rdx
+	call compute_char_repeats
+	
+	pop 	%r11
+	addq	%rax,	%r11
+	pop 	%r10
+	pop 	%r9
+	pop 	%r8
+	pop 	%rcx
+	pop 	%rdx
+	pop 	%rsi
+	pop 	%rdi
+	pop 	%rax
+
+	# check if finished a line
+	cmp 	(%r13), $10
+	je		update_statistics_f2
+
+	return_from_update_stats_f2:
+
+	# read a new line or finish to parse the current one
+	cmp 	%r13, 	%rbp
+	je		read_file_loop_f2
+	jmp 	find_newline_f2
+
+update_statistics_f2:
+	# update max line length
+	cmp 	(%rsi),		%r8
+	jle		update_max_repeats_f2
+	movq	%r8,		(%rsi)
+
+update_max_repeats_f2:
+	# update max line repeats
+	cmp 	(%rdi),		%r11
+	jle		reset_for_next_stats_f2
+	movq	%r11,		(%rdi)
+
+reset_for_next_stats_f2:
+	xor 	%r8,	%r8
+	xor 	%r11,	%r11
+	cmp 	%r10,	$1
+	je		exit_f2
+	jmp 	return_from_update_stats_f2
+
+
+EOF_f2:
+	movq 	$1,		%r10
+	jmp update_statistics_f2
+	
+exit_f2: 
+	# close file (syscall close)
+	movq	$3, 	%rax
+	movq 	%r9,	%rdi
+	syscall
+
+	addq	$128, 	%rsp
 	ret
