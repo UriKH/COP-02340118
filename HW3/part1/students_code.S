@@ -85,7 +85,7 @@ parse_lines:
 	pop		%rax
 
 	# could not open -> exit
-	cmp 	%r9,	$0
+	cmp 	$0,		%r9
 	je 		exit
 	
 	# ----------------- Read the file by 128 size chunks and parse -----------------
@@ -93,7 +93,7 @@ read_file_loop_f2:
 	# read to buf (syscall read)
 	movq	$0, 	%rax
 	movq 	%r9,	%rdi
-	lea		$-128(%rbp), %rsi
+	lea		-128(%rbp), %rsi
 	movq	$128,	%rdx
 	syscall 
 
@@ -104,12 +104,12 @@ read_file_loop_f2:
 	pop		%rdi
 	pop		%rax
 
-	cmp		%rcx,	$0
+	cmp		$0,		%rcx
 	je 		EOF_f2
 
 	# ----------------- go over the chunk buffer and parse -----------------	
 	# set r12 (i.e. start) and r13 (i.e. end) to start of buffer 
-	lea 	$-128(%rbp), %r12
+	lea 	-128(%rbp), %r12
 	movq	%r12,	%r13
 
 	# use rcx as loop indexer
@@ -120,11 +120,11 @@ find_newline_f2:
 	# check if reached end of line
 	movq 	%rbp, 	%r14
 	subq	%r13,	%r14
-	cmp 	%r14, 	$0
+	cmp 	$0,		%r14
 	je		update_line_cnt_no_newline_f2
 
 	# check if reached new line, if yes parse, else continue the search
-	cmp 	(%r13),	$10
+	cmp 	$10,	(%r13)
 	je 		update_line_cnt_after_newline_f2
 
 	inc		%r13
@@ -132,14 +132,16 @@ find_newline_f2:
 
 	update_line_cnt_after_newline_f2:
 	inc		%rax						# new line found
-
-	lea 	(%r13, %r12, $-1), %r14		# update current line length
+	movq 	%r13,	%r14
+	subq	%r12,	%r14
 	addq	%r14,	%r8
 
 	jmp 	parse_line_f2
 
 	update_line_cnt_no_newline_f2:
-	lea 	$1(%r13, %r12, $-1), %r14	# update current line length
+	movq 	%r13,	%r14
+	subq	%r12,	%r14
+	inc 	%r14
 	addq	%r14,	%r8
 
 	jmp 	parse_line_f2
@@ -156,8 +158,10 @@ parse_line_f2:
 	push 	%r10
 	push 	%r11
 
-	movq 	%r12, 	%rdi	
-	lea		$1(%r13, %r12, $-1), %rsi
+	movq 	%r12, 	%rdi
+	movq	%r13,	%rsi
+	subq	%r12,	%rsi
+	inc 	%rsi
 	movq	%rbx,	%rdx
 	call compute_char_repeats
 	
@@ -173,7 +177,7 @@ parse_line_f2:
 	pop 	%rax
 
 	# check if finished a line
-	cmp 	(%r13), $10
+	cmp 	$10,	(%r13)
 	je		update_statistics_f2
 
 	return_from_update_stats_f2:
@@ -198,7 +202,7 @@ update_max_repeats_f2:
 reset_for_next_stats_f2:
 	xor 	%r8,	%r8
 	xor 	%r11,	%r11
-	cmp 	%r10,	$1
+	cmp 	$1,		%r10
 	je		exit_f2
 	jmp 	return_from_update_stats_f2
 
