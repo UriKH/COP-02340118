@@ -143,7 +143,7 @@ find_newline_f2:
 	subq	%r10,	%r14
 	inc 	%r14
 	cmp 	%r14,	%rcx
-	je		update_line_cnt_no_newline_f2
+	je		update_line_cnt_no_newline_EOF_f2
 
 	# check if reached new line, if yes parse, else continue the search
 	cmpb 	$10,	(%r13)
@@ -157,7 +157,7 @@ find_newline_f2:
 	movq 	%r13,	%r14
 	subq	%r12,	%r14
 	addq	%r14,	%r8
-
+	xor 	%r10,	%r10
 	jmp 	parse_line_f2
 
 	update_line_cnt_no_newline_f2:
@@ -165,12 +165,19 @@ find_newline_f2:
 	subq	%r12,	%r14
 	inc 	%r14
 	addq	%r14,	%r8
+	xor 	%r10,	%r10
+	jmp 	parse_line_f2
 
+	update_line_cnt_no_newline_EOF_f2:
+	movq 	%r13,	%r14
+	subq	%r12,	%r14
+	inc 	%r14
+	addq	%r14,	%r8
+	movq 	$1,		%r10
 	jmp 	parse_line_f2
 
 parse_line_f2:
 	# compute char repeats
-	xor 	%r10,	%r10
 	push_all_caller_registers
 
 	movq 	%r12, 	%rdi
@@ -188,6 +195,9 @@ parse_line_f2:
 
 	# check if finished a line
 	cmpb 	$10,	(%r13)
+	je		update_statistics_f2
+
+	cmp		$1,		%r10
 	je		update_statistics_f2
 
 	return_from_update_stats_f2:
