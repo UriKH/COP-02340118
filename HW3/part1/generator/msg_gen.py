@@ -1,5 +1,6 @@
 import string
 import random
+import os
 
 def _distribute_lengths(sum_length: int, n_slots: int, max_len: int) -> list:
     """
@@ -232,31 +233,62 @@ def create_message(
     return message
 
 
+def generate_random_valid_config(seed=None):
+    if seed is not None:
+        random.seed(seed)
+
+    total_length = random.randint(30, 100)
+    num_newlines = random.randint(1, min(10, total_length // 5))
+
+    # Available characters for content, excluding newlines
+    available_chars = total_length - (num_newlines - 1)
+
+    # Constraint from create_message: longest_line_length < available_chars
+    max_possible_line_length = min(25, available_chars - 1)
+
+    # Ensure min is not greater than max
+    min_required_line_length = max(1, (available_chars + num_newlines - 1) // num_newlines)
+    if min_required_line_length > max_possible_line_length:
+        # fallback: adjust num_newlines to make it valid
+        num_newlines = max(1, total_length // 10)
+        available_chars = total_length - (num_newlines - 1)
+        max_possible_line_length = min(25, available_chars - 1)
+        min_required_line_length = max(1, (available_chars + num_newlines - 1) // num_newlines)
+
+    longest_line_length = random.randint(min_required_line_length, max_possible_line_length)
+    max_special_in_line = random.randint(1, longest_line_length)
+    special_char = 'A'
+    end_with_newline = random.choice([True, False])
+
+    return {
+        "total_length": total_length,
+        "num_newlines": num_newlines,
+        "special_char": special_char,
+        "longest_line_length": longest_line_length,
+        "max_special_in_line": max_special_in_line,
+        "end_with_newline": end_with_newline
+    }
+
+
+
+def generate_message_files_randomized(folder_name, num_files):
+    os.makedirs(folder_name, exist_ok=True)
+
+    for i in range(num_files):
+        config = generate_random_valid_config()
+        config['random_seed'] = i  # still deterministic for reproducibility
+
+        msg = create_message(**config)
+
+        file_path = os.path.join(folder_name, f"message_{i+1}.txt")
+        with open(file_path, "w") as f:
+            f.write(msg)
+
+        print(f"Created: {file_path} | Config: {config}")
+
 # Example usage:
 if __name__ == "__main__":
-    # Example parameters
-    total_length = 60
-    num_newlines = 4
-    special_char = 'A'
-    longest_line_length = 15
-    max_special_in_line = 5
-    end_with_newline = False
-    # For reproducibility:
-    seed = 42
-
-    msg = create_message(
-        total_length=total_length,
-        num_newlines=num_newlines,
-        special_char=special_char,
-        longest_line_length=longest_line_length,
-        max_special_in_line=max_special_in_line,
-        end_with_newline=end_with_newline,
-        random_seed=seed
+    generate_message_files_randomized(
+        folder_name="randomized_messages",
+        num_files=100
     )
-    print("Generated message (repr):")
-    print(repr(msg))
-    print("Length:", len(msg))
-    print("Newlines:", msg.count("\n"))
-    print("Lines and their properties:")
-    for idx, ln in enumerate(msg.split("\n")):
-        print(f" Line {idx}: length={len(ln)}, special_count={ln.count(special_char)}")
