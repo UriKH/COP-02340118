@@ -2,6 +2,8 @@ import string
 import random
 import os
 
+import configurations as conf
+
 def _distribute_lengths(sum_length: int, n_slots: int, max_len: int) -> list:
     """
     Distribute `sum_length` non-negative units across `n_slots` slots, each slot ≤ max_len.
@@ -237,37 +239,53 @@ def generate_random_valid_config(seed=None):
     if seed is not None:
         random.seed(seed)
 
-    total_length = random.randint(10, 257)
-    num_newlines = random.randint(2, min(20, total_length // 5))
+    def generate():
+        end_with_newline = random.choice([True, False])
+        total_length = random.randint(conf.MIN_LINE_LEN, conf.MAX_LINE_LEN * conf.MAX_NEW_LINES)
+        num_newlines = random.randint(max(1 if end_with_newline else 0, conf.MIN_NEW_LINES), max(conf.MAX_NEW_LINES, min(total_length, conf.MAX_NEW_LINES, total_length // conf.MAX_NEW_LINES)))
 
-    # Available characters for content, excluding newlines
-    available_chars = total_length - (num_newlines - 1)
+        # Available characters for content, excluding newlines
+        available_chars = max(1, total_length - (num_newlines - 1))
 
-    # Constraint from create_message: longest_line_length < available_chars
-    max_possible_line_length = min(total_length, available_chars - 1)
+        # Constraint from create_message: longest_line_length < available_chars
+        max_possible_line_length = min(available_chars, conf.MAX_LINE_LEN-1)
 
-    # Ensure min is not greater than max
-    min_required_line_length = max(0, (available_chars + num_newlines - 1) // num_newlines)
-    if min_required_line_length > max_possible_line_length:
+        # Ensure min is not greater than max
+        min_required_line_length = max(conf.MIN_LINE_LEN, 0 if num_newlines == 0 else ((available_chars + num_newlines - 1) // num_newlines) - 1)
+        return {
+            'total_length': total_length,
+            'num_newlines': num_newlines, 
+            'max_possible_line_length': max_possible_line_length,
+            'min_required_line_length': min_required_line_length,
+            'end_with_newline': end_with_newline
+        }
+    
+    configs = generate()
+    while configs['min_required_line_length'] > configs['max_possible_line_length']:
+        configs = generate()
+    
+    if configs['min_required_line_length'] > configs['max_possible_line_length']:
+        raise ValueError(f"<min line length> = {configs['min_required_line_length']} \t > \t {configs['max_possible_line_length']} = <max possible line length>")
         # fallback: adjust num_newlines to make it valid
         num_newlines = max(1, total_length // 10)
         available_chars = total_length - (num_newlines - 1)
         max_possible_line_length = min(total_length, available_chars - 1)
         min_required_line_length = max(0, (available_chars + num_newlines - 1) // num_newlines)
 
-    longest_line_length = random.randint(min_required_line_length, max_possible_line_length)
-    max_special_in_line = random.randint(1, longest_line_length)
+    longest_line_length = random.randint(configs['min_required_line_length'], configs['max_possible_line_length'])
+    max_special_in_line = random.randint(0, longest_line_length)
     special_char = 'A'
-    end_with_newline = random.choice([True, False])
+    
 
     return {
-        "total_length": total_length,
-        "num_newlines": num_newlines,
+        "total_length": configs['total_length'],
+        "num_newlines": configs['num_newlines'],
         "special_char": special_char,
         "longest_line_length": longest_line_length,
         "max_special_in_line": max_special_in_line,
-        "end_with_newline": end_with_newline
+        "end_with_newline": configs['end_with_newline']
     }
+
 
 def generate_message_files_randomized(folder_name, num_files):
     input_dir = f'{folder_name}_in'
@@ -276,10 +294,16 @@ def generate_message_files_randomized(folder_name, num_files):
     os.makedirs(output_dir, exist_ok=True)
 
     for i in range(num_files):
-        config = generate_random_valid_config()
-        config['random_seed'] = i  # still deterministic for reproducibility
-
-        msg = create_message(**config)
+        while True:
+            config = generate_random_valid_config()
+            config['random_seed'] = i  # still deterministic for reproducibility
+            msg = ''
+            # config['random_seed'] = random.randint(10, 1000)
+            try:
+                msg = create_message(**config)
+                break
+            except:
+                continue
 
         file_path = os.path.join(input_dir, f"message_{i+1}.txt")
         with open(file_path, "w", encoding='ascii') as f:
@@ -297,5 +321,5 @@ def generate_message_files_randomized(folder_name, num_files):
 if __name__ == "__main__":
     generate_message_files_randomized(
         folder_name="tests",
-        num_files=100
+        num_files=conf.NUM_OF_TESTS
     )
