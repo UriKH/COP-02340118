@@ -287,7 +287,8 @@ def generate_message_files_randomized(folder_name, num_files):
 
         out_file_path = os.path.join(output_dir, f"message_{i+1}.txt")
         with open(out_file_path, "w", encoding='ascii') as f:
-            out_msg = f'There are {config["num_newlines"] + 1} lines. The longest line is of length {config["longest_line_length"]} and the most repeats of the special character in a single line is {config["max_special_in_line"]}.\n'
+            num_lines = len(msg.split('\n'))
+            out_msg = f'There are {num_lines} lines. The longest line is of length {config["longest_line_length"]} and the most repeats of the special character in a single line is {config["max_special_in_line"]}.\n'
             f.write(out_msg)
 
         print(f"Created: {file_path} | Config: {config}")

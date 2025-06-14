@@ -82,8 +82,8 @@ parse_lines:
 	xor		%r10,	%r10	# utility
 	xor 	%r9,	%r9		# file descriptor
 
-	movq 	$0,		(%rdx)
-	movq 	$0,		(%rsi)	
+	movl 	$0,		(%rdx)
+	movl 	$0,		(%rsi)	
 
 	# syscall open
 	push_all_caller_registers
@@ -193,6 +193,7 @@ find_newline_f2:
 	subq	%r12,	%r14
 	inc 	%r14
 	addq	%r14,	%r8
+	# dec 	%rax
 	
 	movq 	$1,		%r10
 	jmp 	parse_line_f2
@@ -242,13 +243,13 @@ update_statistics_f2:
 	# update max line length
 	cmpl 	(%rsi),		%r8d
 	jle		update_max_repeats_f2
-	movq	%r8,		(%rsi)
+	movl	%r8d,		(%rsi)
 
 update_max_repeats_f2:
 	# update max line repeats
 	cmpl 	(%rdx),		%r11d
 	jle		reset_for_next_stats_f2
-	movq	%r11,		(%rdx)
+	movl	%r11d,		(%rdx)
 
 reset_for_next_stats_f2:
 	xor 	%r8,	%r8
