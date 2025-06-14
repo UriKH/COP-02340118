@@ -160,7 +160,8 @@ find_newline_f2:
 	inc 	%r14
 	cmp 	%r14,	%rcx
 	je		update_line_cnt_no_newline_EOF_f2
-	# after we got to the last case, we need to exit gracfully
+	
+	# after we got 
 	movq 	%r13,	%r14
 	lea		-128(%rbp), %r10
 	subq	%r10,	%r14
@@ -279,7 +280,7 @@ reset_for_next_stats_f2:
 
 
 EOF_f2:
-	dec 	%rax
+	# dec 	%rax
 	movq 	$1,		%r10
 	jmp 	update_statistics_f2
 	
