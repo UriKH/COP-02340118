@@ -240,13 +240,13 @@ update_statistics_f2:
 	# movq	%r13,	%r12
 	
 	# update max line length
-	cmp 	(%rsi),		%r8
+	cmpl 	(%rsi),		%r8d
 	jle		update_max_repeats_f2
 	movq	%r8,		(%rsi)
 
 update_max_repeats_f2:
 	# update max line repeats
-	cmp 	(%rdx),		%r11
+	cmpl 	(%rdx),		%r11d
 	jle		reset_for_next_stats_f2
 	movq	%r11,		(%rdx)
 
