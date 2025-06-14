@@ -259,6 +259,7 @@ exit_f2:
 	movq	$3, 	%rax
 	movq 	%r9,	%rdi
 	syscall
+	pop_all_caller_registers
 
 	pop_all_caller_registers
 
