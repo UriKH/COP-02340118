@@ -112,7 +112,6 @@ parse_lines:
 	# ----------------- Read the file by 128 size chunks and parse -----------------
 read_file_loop_f2:
 	# read to buf (syscall read)
-
 	push_all_caller_registers
 	movq	$0, 	%rax
 	movq 	%r9,	%rdi
