@@ -261,8 +261,6 @@ exit_f2:
 	syscall
 	pop_all_caller_registers
 
-	pop_all_caller_registers
-
 exit_no_close_f2:
 	inc 	%rax 	# newlines + 1
 	pop_all_callee_registers

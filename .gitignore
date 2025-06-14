@@ -1,3 +1,4 @@
 *.o
 *.exe
 HW3/part2/filesystem.img
+HW3/part1/tests_*
