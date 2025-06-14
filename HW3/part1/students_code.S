@@ -33,9 +33,11 @@
 	push %r12
 	push %r13
 	push %r14
+	push %r15
 .endm
 
 .macro pop_all_callee_registers
+	pop %r15
     pop %r14
 	pop %r13
 	pop %r12
@@ -81,6 +83,7 @@ parse_lines:
 	xor 	%rax, 	%rax	# line counter
 	xor		%r10,	%r10	# utility
 	xor 	%r9,	%r9		# file descriptor
+	xor 	%r15, 	%r15
 
 	movl 	$0,		(%rdx)
 	movl 	$0,		(%rsi)	
@@ -140,6 +143,8 @@ find_newline_f2:
 	je 		update_line_cnt_after_newline_f2
 	# END CASE 1 <<<
 
+	movq 	$0, 	%r15
+
 	# >>> CASE 3 -> finished buffer, go to next one.
 	# check if reached end of line
 	movq 	$-1,	%r14
@@ -171,6 +176,7 @@ find_newline_f2:
 	jmp 	find_newline_f2
 
 	update_line_cnt_after_newline_f2:
+	movq	$1,		%r15
 	inc		%rax						# new line found
 	movq 	%r13,	%r14
 	subq	%r12,	%r14
@@ -193,7 +199,6 @@ find_newline_f2:
 	subq	%r12,	%r14
 	inc 	%r14
 	addq	%r14,	%r8
-	# dec 	%rax
 	
 	movq 	$1,		%r10
 	jmp 	parse_line_f2
@@ -260,10 +265,14 @@ reset_for_next_stats_f2:
 
 
 EOF_f2:
+	dec 	%rax
 	movq 	$1,		%r10
-	jmp update_statistics_f2
+	jmp 	update_statistics_f2
 	
-exit_f2: 
+exit_f2:
+	inc 	%rax 	# newlines + 1
+	
+	skip_final_line_count:
 	# close file (syscall close)
 	push_all_caller_registers
 	
@@ -273,7 +282,6 @@ exit_f2:
 	pop_all_caller_registers
 
 exit_no_close_f2:
-	inc 	%rax 	# newlines + 1
 	pop_all_callee_registers
 	addq	$128, 	%rsp
 	leave
