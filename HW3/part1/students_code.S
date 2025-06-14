@@ -137,13 +137,11 @@ read_file_loop_f2:
 
 	# find the end of line in current buffer
 find_newline_f2:
-	# >>> CASE 1 -> found \n
-	# check if reached new line, if yes parse, else continue the search
-	cmpb 	$10,	(%r13)
-	je 		update_line_cnt_after_newline_f2
-	# END CASE 1 <<<
-
-	movq 	$0, 	%r15
+	# # >>> CASE 1 -> found \n
+	# # check if reached new line, if yes parse, else continue the search
+	# cmpb 	$10,	(%r13)
+	# je 		update_line_cnt_after_newline_f2
+	# # END CASE 1 <<<
 
 	# >>> CASE 3 -> finished buffer, go to next one.
 	# check if reached end of line
@@ -171,6 +169,12 @@ find_newline_f2:
 	jl		exit_f2
 	# END CASE 2 <<<
 
+	# >>> CASE 1 -> found \n
+	# check if reached new line, if yes parse, else continue the search
+	cmpb 	$10,	(%r13)
+	je 		update_line_cnt_after_newline_f2
+	# END CASE 1 <<<
+
 	# continue the for loop
 	inc		%r13
 	jmp 	find_newline_f2
@@ -186,6 +190,11 @@ find_newline_f2:
 	jmp 	parse_line_f2
 
 	update_line_cnt_no_newline_f2:
+	# >>> CASE 1 -> found \n
+	# check if reached new line, if yes parse, else continue the search
+	cmpb 	$10,	(%r13)
+	je 		update_line_cnt_after_newline_f2
+	# END CASE 1 <<<
 	movq 	%r13,	%r14
 	subq	%r12,	%r14
 	inc 	%r14
@@ -195,6 +204,11 @@ find_newline_f2:
 	jmp 	parse_line_f2
 
 	update_line_cnt_no_newline_EOF_f2:
+	# >>> CASE 1 -> found \n
+	# check if reached new line, if yes parse, else continue the search
+	cmpb 	$10,	(%r13)
+	je 		update_line_cnt_after_newline_f2
+	# END CASE 1 <<<
 	movq 	%r13,	%r14
 	subq	%r12,	%r14
 	inc 	%r14
