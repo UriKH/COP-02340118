@@ -2,8 +2,11 @@ import subprocess as sb
 import difflib
 import os
 
+RED = '\033[91m'
+GREEN = '\033[92m'
+RESET = '\033[0m'
 
-def run_test(t_name, in_name: str, expected_name: str):
+def run_test(t_name: int, in_name: str, expected_name: str):
     result = sb.run(["./test.exe", f'./tests_in/{in_name}'], stdout=sb.PIPE)
     output = result.stdout.decode("ascii")
 
@@ -19,14 +22,12 @@ def run_test(t_name, in_name: str, expected_name: str):
     with open(expected_path, encoding='ascii') as file_2:
         file_2_text = file_2.readlines()
 
-    diff = difflib.unified_diff(
-        file_1_text, file_2_text, fromfile=output_path, 
-        tofile=expected_path, lineterm='')
+    diff = difflib.SequenceMatcher(None, file_1_text, file_2_text)
 
-    if diff:
-        print(f'test {t_name} FAILED')
+    if diff.ratio() == 1.0:
+        print(f'test {t_name:03}: \t {GREEN}PASSED{RESET}')
     else:
-        print(f'test {t_name} PASSED')
+        print(f'test {t_name:03}: \t {RED}FAILED{RESET}')
 
 
 def run_all_tests():
@@ -34,7 +35,7 @@ def run_all_tests():
     for name in fnames:
         tname, _ = name.split('.')
         _, t_num = tname.split('_')
-        run_test(t_num, name, name)
+        run_test(int(t_num), name, name)
 
 if __name__ == '__main__':
-    run_all_tests()    
+    run_all_tests()
