@@ -134,16 +134,22 @@ read_file_loop_f2:
 
 	# find the end of line in current buffer
 find_newline_f2:
-	# check if reached end of line
-	movq 	%rbp, 	%r14
-	subq	%r13,	%r14
-	cmp 	$0,		%r14
-	je		update_line_cnt_no_newline_f2
-
+	# >>> CASE 1 -> found \n
 	# check if reached new line, if yes parse, else continue the search
 	cmpb 	$10,	(%r13)
 	je 		update_line_cnt_after_newline_f2
+	# END CASE 1 <<<
 
+	# >>> CASE 3 -> finished buffer, go to next one.
+	# check if reached end of line
+	movq 	$-1,	%r14
+	addq 	%rbp, 	%r14
+	subq	%r13,	%r14
+	cmp 	$0,		%r14
+	je		update_line_cnt_no_newline_f2
+	# END CASE 3 <<<
+
+	# >>> CASE 2 -> finished in mid buffer
 	# in case this was the last chunk and we finished going over it.
 	movq 	%r13,	%r14
 	lea		-128(%rbp), %r10
@@ -151,14 +157,14 @@ find_newline_f2:
 	inc 	%r14
 	cmp 	%r14,	%rcx
 	je		update_line_cnt_no_newline_EOF_f2
-
-	# in case this was the last chunk and we finished going over it.
+	# after we got to the last case, we need to exit gracfully
 	movq 	%r13,	%r14
 	lea		-128(%rbp), %r10
 	subq	%r10,	%r14
 	inc 	%r14
 	cmp 	%r14,	%rcx
 	jl		exit_f2
+	# END CASE 2 <<<
 
 	# continue the for loop
 	inc		%r13
@@ -191,6 +197,7 @@ find_newline_f2:
 	movq 	$1,		%r10
 	jmp 	parse_line_f2
 
+
 parse_line_f2:
 	# compute char repeats
 	push_all_caller_registers
@@ -221,13 +228,16 @@ parse_line_f2:
 	return_from_update_stats_f2:
 
 	# read a new line or finish to parse the current one
+	inc 	%r13
+	movq	%r13,	%r12
+
 	cmp 	%r13, 	%rbp
 	jle		read_file_loop_f2
 	jmp 	find_newline_f2
 
 update_statistics_f2:
-	inc 	%r13
-	movq	%r13,	%r12
+	# inc 	%r13
+	# movq	%r13,	%r12
 	
 	# update max line length
 	cmp 	(%rsi),		%r8
