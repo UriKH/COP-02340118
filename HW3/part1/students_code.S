@@ -82,6 +82,9 @@ parse_lines:
 	xor		%r10,	%r10	# utility
 	xor 	%r9,	%r9		# file descriptor
 
+	movq 	$0,		(%rdx)
+	movq 	$0,		(%rsi)	
+
 	# syscall open
 	push_all_caller_registers
 	movq	$2, 	%rax
@@ -109,7 +112,6 @@ parse_lines:
 	# ----------------- Read the file by 128 size chunks and parse -----------------
 read_file_loop_f2:
 	# read to buf (syscall read)
-
 	push_all_caller_registers
 	movq	$0, 	%rax
 	movq 	%r9,	%rdi
@@ -138,6 +140,11 @@ find_newline_f2:
 	cmp 	$0,		%r14
 	je		update_line_cnt_no_newline_f2
 
+	# check if reached new line, if yes parse, else continue the search
+	cmpb 	$10,	(%r13)
+	je 		update_line_cnt_after_newline_f2
+
+	# in case this was the last chunk and we finished going over it.
 	movq 	%r13,	%r14
 	lea		-128(%rbp), %r10
 	subq	%r10,	%r14
@@ -145,10 +152,15 @@ find_newline_f2:
 	cmp 	%r14,	%rcx
 	je		update_line_cnt_no_newline_EOF_f2
 
-	# check if reached new line, if yes parse, else continue the search
-	cmpb 	$10,	(%r13)
-	je 		update_line_cnt_after_newline_f2
+	# in case this was the last chunk and we finished going over it.
+	movq 	%r13,	%r14
+	lea		-128(%rbp), %r10
+	subq	%r10,	%r14
+	inc 	%r14
+	cmp 	%r14,	%rcx
+	jl		exit_f2
 
+	# continue the for loop
 	inc		%r13
 	jmp 	find_newline_f2
 
@@ -157,6 +169,7 @@ find_newline_f2:
 	movq 	%r13,	%r14
 	subq	%r12,	%r14
 	addq	%r14,	%r8
+
 	xor 	%r10,	%r10
 	jmp 	parse_line_f2
 
@@ -165,15 +178,16 @@ find_newline_f2:
 	subq	%r12,	%r14
 	inc 	%r14
 	addq	%r14,	%r8
+
 	xor 	%r10,	%r10
 	jmp 	parse_line_f2
 
 	update_line_cnt_no_newline_EOF_f2:
-	inc		%rax
 	movq 	%r13,	%r14
 	subq	%r12,	%r14
 	inc 	%r14
 	addq	%r14,	%r8
+	
 	movq 	$1,		%r10
 	jmp 	parse_line_f2
 
@@ -190,9 +204,12 @@ parse_line_f2:
 	
 	pop 	%r11
 	addq	%rax,	%r11
+	movq 	%r11,	%r14
 	push	%r11
 
 	pop_all_caller_registers
+
+	movq 	%r14,	%r11
 
 	# check if finished a line
 	cmpb 	$10,	(%r13)
@@ -219,9 +236,9 @@ update_statistics_f2:
 
 update_max_repeats_f2:
 	# update max line repeats
-	cmp 	(%rdi),		%r11
+	cmp 	(%rdx),		%r11
 	jle		reset_for_next_stats_f2
-	movq	%r11,		(%rdi)
+	movq	%r11,		(%rdx)
 
 reset_for_next_stats_f2:
 	xor 	%r8,	%r8
@@ -237,11 +254,16 @@ EOF_f2:
 	
 exit_f2: 
 	# close file (syscall close)
+	push_all_caller_registers
+	
 	movq	$3, 	%rax
 	movq 	%r9,	%rdi
 	syscall
 
+	pop_all_caller_registers
+
 exit_no_close_f2:
+	inc 	%rax 	# newlines + 1
 	pop_all_callee_registers
 	addq	$128, 	%rsp
 	leave

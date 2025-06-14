@@ -12,5 +12,16 @@ int main() {
 	char* path = "./input";
 	int lines = parse_lines(path, &line_max_len, &line_max_repeat);
 	printf("There are %d lines. The longest line is of length %d and the most repeats of the special character in a single line is %d.\n", lines, line_max_len, line_max_repeat);
+	printf("\n\n");
+
+	char* path2 = "./input2";
+	lines = parse_lines(path2, &line_max_len, &line_max_repeat);
+	printf("There are %d lines. The longest line is of length %d and the most repeats of the special character in a single line is %d.\n", lines, line_max_len, line_max_repeat);
+	printf("\n\n");
+
+	char* path3 = "./input3";
+	lines = parse_lines(path3, &line_max_len, &line_max_repeat);
+	printf("There are %d lines. The longest line is of length %d and the most repeats of the special character in a single line is %d.\n", lines, line_max_len, line_max_repeat);
+	printf("\n\n");
 	return 0;
 }
