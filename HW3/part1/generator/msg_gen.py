@@ -274,7 +274,7 @@ def generate_random_valid_config(seed=None):
 
     longest_line_length = random.randint(configs['min_required_line_length'], configs['max_possible_line_length'])
     max_special_in_line = random.randint(0, longest_line_length)
-    special_char = 'A'
+    special_char = conf.SPECIAL_CHAR
     
 
     return {
@@ -286,6 +286,27 @@ def generate_random_valid_config(seed=None):
         "end_with_newline": configs['end_with_newline']
     }
 
+
+def add_others():
+    tests = []
+    if conf.ADD_BASE:
+        t_name = 'message_base.txt'
+        msg = "I love ATAM\n."
+        expected = "There are 2 lines. The longest line is of length 11 and the most repeats of the special character in a single line is 2.\n"
+        tests.append({'t_name': t_name, 'msg': msg, 'expected': expected})
+    if conf.ADD_EMPTY:
+        t_name = 'message_empty.txt'
+        expected = "There are 1 lines. The longest line is of length 0 and the most repeats of the special character in a single line is 0.\n"
+        tests.append({'t_name': t_name, 'msg': '', 'expected': expected})
+    if conf.ADD_ONELINERS:
+        for i in range(conf.NUM_OF_ONE_LINERS):
+            t_name = f'message_1line_{i}.txt'
+            length = random.randint(1, conf.MAX_LINE_LEN)
+            spc_in_line = random.randint(0, length-1)
+            msg = create_message(length, 0, conf.SPECIAL_CHAR, length-1, spc_in_line, i)
+            expected = f"There are 1 lines. The longest line is of length {length-1} and the most repeats of the special character in a single line is {spc_in_line}.\n"
+            tests.append({'t_name': t_name, 'msg': '', 'expected': expected})
+    return 
 
 def generate_message_files_randomized(folder_name, num_files):
     input_dir = f'{folder_name}_in'
