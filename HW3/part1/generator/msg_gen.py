@@ -289,24 +289,53 @@ def generate_random_valid_config(seed=None):
 
 def add_others():
     tests = []
+    base_index = conf.NUM_OF_TESTS
+    
     if conf.ADD_BASE:
-        t_name = 'message_base.txt'
+        base_index += 1
+        t_name = f'message_{base_index}.txt'
         msg = "I love ATAM\n."
         expected = "There are 2 lines. The longest line is of length 11 and the most repeats of the special character in a single line is 2.\n"
         tests.append({'t_name': t_name, 'msg': msg, 'expected': expected})
+
+        base_index += 1
+        t_name = f'message_{base_index}.txt'
+        msg = "I love ATAM\n"
+        expected = "There are 2 lines. The longest line is of length 11 and the most repeats of the special character in a single line is 2.\n"
+        tests.append({'t_name': t_name, 'msg': msg, 'expected': expected})
+
+        # full line with one \n at the end
+        base_index += 1
+        length = 128
+        spc_in_line = random.randint(0, length-1)
+        expected = f"There are 2 lines. The longest line is of length {length-1} and the most repeats of the special character in a single line is {spc_in_line}.\n"
+        msg = conf.SPECIAL_CHAR * spc_in_line + (128 - spc_in_line - 1) * 'a' + '\n'
+        assert (len(msg) == 128)
+        tests.append({'t_name': f'message_{base_index}.txt', 'msg': msg, 'expected': expected})
     if conf.ADD_EMPTY:
-        t_name = 'message_empty.txt'
+        base_index += 1
+        t_name = f'message_{base_index}.txt'
         expected = "There are 1 lines. The longest line is of length 0 and the most repeats of the special character in a single line is 0.\n"
         tests.append({'t_name': t_name, 'msg': '', 'expected': expected})
-    if conf.ADD_ONELINERS:
+    if conf.ADD_ONE_LINERS:
         for i in range(conf.NUM_OF_ONE_LINERS):
-            t_name = f'message_1line_{i}.txt'
+            base_index += 1
+            t_name = f'message_{base_index}.txt'
             length = random.randint(1, conf.MAX_LINE_LEN)
-            spc_in_line = random.randint(0, length-1)
-            msg = create_message(length, 0, conf.SPECIAL_CHAR, length-1, spc_in_line, i)
-            expected = f"There are 1 lines. The longest line is of length {length-1} and the most repeats of the special character in a single line is {spc_in_line}.\n"
-            tests.append({'t_name': t_name, 'msg': '', 'expected': expected})
-    return 
+            spc_in_line = random.randint(0, length)
+            msg = create_message(length, 0, conf.SPECIAL_CHAR, length, spc_in_line, random_seed=i)
+            expected = f"There are 1 lines. The longest line is of length {length} and the most repeats of the special character in a single line is {spc_in_line}.\n"
+            tests.append({'t_name': t_name, 'msg': msg, 'expected': expected})
+        
+        # full line
+        base_index += 1
+        length = 128
+        spc_in_line = random.randint(0, length)
+        expected = f"There are 1 lines. The longest line is of length {length} and the most repeats of the special character in a single line is {spc_in_line}.\n"
+        msg = conf.SPECIAL_CHAR * spc_in_line + (128 - spc_in_line) * 'a'
+        assert (len(msg) == 128)
+        tests.append({'t_name': f'message_{base_index}.txt', 'msg': msg, 'expected': expected})
+    return tests
 
 def generate_message_files_randomized(folder_name, num_files):
     input_dir = f'{folder_name}_in'
@@ -337,10 +366,22 @@ def generate_message_files_randomized(folder_name, num_files):
             f.write(out_msg)
 
         print(f"Created: {file_path} | Config: {config}")
+    
+    for test in add_others():
+        file_path = os.path.join(input_dir, test['t_name'])
+        with open(file_path, "w", encoding='ascii') as f:
+            f.write(test['msg'])
+
+        out_file_path = os.path.join(output_dir, test['t_name'])
+        with open(out_file_path, "w", encoding='ascii') as f:
+            f.write(test['expected'])
+
+        print(f"Created: {file_path} | Config: none compatible with edge case tests")
+
 
 # Example usage:
 if __name__ == "__main__":
     generate_message_files_randomized(
         folder_name="tests",
-        num_files=conf.NUM_OF_TESTS
+        num_files=conf.NUM_OF_TESTS + conf.NUM_OF_ONE_LINERS + 1 if conf.ADD_BASE else 0 + 1 if conf.ADD_EMPTY else 0
     )

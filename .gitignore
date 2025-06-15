@@ -2,3 +2,6 @@
 *.exe
 HW3/part2/filesystem.img
 HW3/part1/tests_*
+HW3/part1/good_tests
+HW3/part1/temp
+HW3/part1/generator/__pycache__
